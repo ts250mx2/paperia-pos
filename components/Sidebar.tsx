@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ShoppingCart, Package, DollarSign,
   Users, LogOut, ChevronRight, TrendingUp,
   Sun, Moon, Tags, Settings, UserCircle,
-  ChevronsLeft, ChevronsRight, BarChart2, Sparkles,
+  ChevronsLeft, ChevronsRight, BarChart2, Sparkles, FileText,
 } from 'lucide-react';
 import { useTheme }   from './ThemeProvider';
 import { useSidebar } from './SidebarContext';
@@ -20,6 +20,7 @@ export default function Sidebar() {
 
   const menuItems = [
     { name: 'POS / Venta',   icon: ShoppingCart,    path: '/' },
+    { name: 'Cotizaciones',  icon: FileText,        path: '/cotizaciones' },
     { name: 'Dashboard',     icon: BarChart2,       path: '/dashboard',   adminOnly: true },
     { name: 'Caja / Cortes', icon: TrendingUp,      path: '/cash',        adminOnly: true },
     { name: 'Movimientos',   icon: DollarSign,      path: '/movements',   adminOnly: true },

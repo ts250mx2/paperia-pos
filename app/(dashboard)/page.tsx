@@ -68,6 +68,11 @@ export default function POSPage() {
   const [printKitchen, setPrintKitchen] = useState(false);
   const [printKitchenManual, setPrintKitchenManual] = useState<boolean | null>(null);
   const [ticketConfig, setTicketConfig] = useState<any>(null);
+  const [cotizacionModal, setCotizacionModal] = useState(false);
+  const [cotCliente, setCotCliente]     = useState('');
+  const [cotNotas, setCotNotas]         = useState('');
+  const [savingCot, setSavingCot]       = useState(false);
+  const [cotError, setCotError]         = useState('');
   const router = useRouter();
 
   useEffect(() => { fetchData(); checkSession(); }, []);
@@ -286,6 +291,50 @@ export default function POSPage() {
     finally   { setProcessing(false); }
   };
 
+  /* ── Guardar cotización (no requiere caja abierta) ── */
+  const openCotizacionModal = () => {
+    if (cart.length === 0) return;
+    setCotCliente('');
+    setCotNotas('');
+    setCotError('');
+    setCotizacionModal(true);
+  };
+
+  const saveCotizacion = async () => {
+    if (cart.length === 0) return;
+    setSavingCot(true);
+    setCotError('');
+
+    // Pre-abrir la ventana para evitar el bloqueo de popups tras el fetch
+    const pdfWin = window.open('about:blank', 'CotizacionPDF', 'width=820,height=920');
+
+    try {
+      const res = await fetch('/api/cotizaciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cart, cliente: cotCliente, notas: cotNotas }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCotizacionModal(false);
+        setCarts(prev => {
+          const next = [...prev];
+          next[activeCartIdx] = [];
+          return next;
+        });
+        if (pdfWin) pdfWin.location.href = `/print/cotizacion/${data.id}`;
+      } else {
+        if (pdfWin) pdfWin.close();
+        setCotError(data.message || 'Error al guardar la cotización');
+      }
+    } catch {
+      if (pdfWin) pdfWin.close();
+      setCotError('Error de conexión');
+    } finally {
+      setSavingCot(false);
+    }
+  };
+
   if (loading) return <div className="flex-center" style={{ height: '100%' }}>Cargando...</div>;
 
   const ItemThumb = ({ item }: { item: CartItem }) =>
@@ -414,8 +463,21 @@ export default function POSPage() {
           <div className={`${cartStyles.summaryRow} ${cartStyles.totalRow}`}>
             <span>Total</span><span>${total.toFixed(2)}</span>
           </div>
-          <button className={cartStyles.checkoutBtn} disabled={cart.length === 0} onClick={openPaymentModal}>
+          <button
+            className={cartStyles.checkoutBtn}
+            disabled
+            title="Temporalmente deshabilitado"
+            style={{ opacity: 0.45, cursor: 'not-allowed' }}
+          >
             Pagar Ahora
+          </button>
+          <button
+            className={cartStyles.checkoutBtn}
+            disabled={cart.length === 0}
+            onClick={openCotizacionModal}
+            style={{ marginTop: '0.6rem', background: 'linear-gradient(135deg, var(--cyan) 0%, var(--cyan-deep) 100%)' }}
+          >
+            Guardar Cotización
           </button>
         </div>
       </div>
@@ -607,6 +669,61 @@ export default function POSPage() {
               onClick={processSale}
             >
               {processing ? 'Procesando...' : `Confirmar Pago — $${total.toFixed(2)}`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cotización modal ── */}
+      {cotizacionModal && (
+        <div className={styles.modalOverlay}>
+          <div className={`${styles.payModal} glass animate-scale`} style={{ maxWidth: '520px' }}>
+            <div className={styles.payModalHead}>
+              <h3>Guardar Cotización</h3>
+              <button onClick={() => setCotizacionModal(false)} disabled={savingCot}><X size={20} /></button>
+            </div>
+
+            <div className={styles.payTotal}>
+              <span>Total cotizado</span>
+              <strong>${total.toFixed(2)}</strong>
+            </div>
+
+            <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div className={styles.payField}>
+                <label>Nombre del Cliente (Opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Nombre del cliente..."
+                  value={cotCliente}
+                  onChange={e => setCotCliente(e.target.value)}
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+              <div className={styles.payField}>
+                <label>Notas / Observaciones (Opcional)</label>
+                <textarea
+                  placeholder="Vigencia, condiciones de entrega, etc."
+                  value={cotNotas}
+                  onChange={e => setCotNotas(e.target.value)}
+                  rows={3}
+                  style={{ resize: 'vertical', minHeight: '80px' }}
+                />
+              </div>
+            </div>
+
+            {cotError && (
+              <div className={styles.payError}>
+                <AlertCircle size={15} /> {cotError}
+              </div>
+            )}
+
+            <button
+              className={styles.payConfirmBtn}
+              disabled={savingCot || cart.length === 0}
+              onClick={saveCotizacion}
+            >
+              {savingCot ? 'Guardando...' : 'Guardar y Generar PDF'}
             </button>
           </div>
         </div>
