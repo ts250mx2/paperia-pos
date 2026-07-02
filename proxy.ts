@@ -20,5 +20,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // Excluye del middleware los internos de Next y CUALQUIER archivo estático
+  // (rutas con extensión: /logo.png, /lapicito.jpg, *.svg, etc.). Si no se
+  // excluyen, esas imágenes se redirigen a /login sin sesión y no cargan.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };

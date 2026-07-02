@@ -233,9 +233,10 @@ function datesForPeriod(p: Period): [string, string] {
 export default function DashboardPage() {
   const [groupBy,  setGroupBy]  = useState<GroupBy>('categoria');
   const [trendGroup, setTrendGroup] = useState<'dia' | 'semana' | 'mes'>('dia');
-  // Always work with concrete dates; init to today
-  const [dateFrom, setDateFrom] = useState(() => datesForPeriod('today')[0]);
-  const [dateTo,   setDateTo]   = useState(() => datesForPeriod('today')[1]);
+  // Por defecto: último mes (30 días). Si la BD es histórica, la detección de
+  // rango de abajo ajusta a los últimos 30 días CON datos.
+  const [dateFrom, setDateFrom] = useState(() => datesForPeriod('month')[0]);
+  const [dateTo,   setDateTo]   = useState(() => datesForPeriod('month')[1]);
   const [data,     setData]     = useState<any>(null);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState('');
