@@ -1,0 +1,125 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle at 15% 25%, rgba(255,141,161,0.18), transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(93,224,230,0.14), transparent 45%),
+    radial-gradient(circle at 50% 100%, rgba(253,216,53,0.10), transparent 40%);
+  transition: background 0.35s;
+}
+
+/* ─── Theme toggle ─── */
+.themeToggle {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  box-shadow: var(--shadow);
+}
+.themeToggle:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--pink-glow);
+  transform: rotate(20deg);
+}
+
+/* ─── Card ─── */
+.card {
+  width: 100%;
+  max-width: 430px;
+  padding: 2.75rem 2.5rem 2.25rem;
+  border-radius: var(--r-2xl);
+  text-align: center;
+}
+
+/* ─── Logo ─── */
+.logoWrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.logo {
+  width: 320px;
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* El logo trae fondo blanco: en modo oscuro lo enmarcamos en una tarjeta
+   blanca redondeada para que se vea intencional y siga siendo legible. */
+:global([data-theme='dark']) .logo {
+  background: #ffffff;
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--r-lg);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+
+.subtitle {
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  font-size: 0.9375rem;
+}
+
+/* ─── Form ─── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+}
+
+.button {
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%);
+  color: #fff;
+  padding: 0.9rem;
+  border-radius: var(--r-lg);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  margin-top: 0.5rem;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 14px var(--pink-glow);
+}
+.button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px var(--pink-glow);
+}
+.button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.error {
+  color: var(--danger);
+  font-size: 0.875rem;
+  background: rgba(245,101,101,0.1);
+  border: 1px solid rgba(245,101,101,0.25);
+  padding: 0.75rem 1rem;
+  border-radius: var(--r);
+  margin-bottom: 0.5rem;
+  text-align: left;
+}

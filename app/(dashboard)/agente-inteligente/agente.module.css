@@ -1,0 +1,16 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 4rem - 70px);
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-radius: var(--r-xl);
+  overflow: hidden;
+}

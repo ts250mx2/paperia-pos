@@ -1,0 +1,138 @@
+.container { max-width: 960px; margin: 0 auto; }
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.titleGroup { display: flex; align-items: center; gap: 1rem; }
+.subtitle   { color: var(--text-muted); font-size: 0.9rem; }
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%);
+  color: #fff;
+  padding: 0.7rem 1.375rem;
+  border-radius: var(--r-lg);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  box-shadow: 0 4px 14px var(--pink-glow);
+}
+.addBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--pink-glow); }
+
+/* Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.375rem 1.25rem;
+  border-radius: var(--r-xl);
+  transition: var(--ease);
+}
+.card:hover { transform: translateY(-3px); }
+
+.cardIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-lg);
+  background: rgba(255,141,161,0.12);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cardBody { flex: 1; min-width: 0; }
+.catName  { font-weight: 700; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.extraYes {
+  display: inline-block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--yellow);
+  background: rgba(253,216,53,0.12);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+.extraNo {
+  display: inline-block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--surface);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+
+.cardActions { display: flex; gap: 0.5rem; }
+.editBtn, .deleteBtn { padding: 0.45rem; border-radius: var(--r); }
+.editBtn   { color: var(--cyan);  } .editBtn:hover   { background: rgba(93,224,230,0.12); }
+.deleteBtn { color: var(--danger);} .deleteBtn:hover { background: rgba(245,101,101,0.1); }
+
+.empty { text-align: center; color: var(--text-muted); padding: 4rem; }
+
+/* Modal */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 1.5rem;
+}
+.modal {
+  width: 100%; max-width: 460px;
+  padding: 2rem; border-radius: var(--r-2xl);
+}
+.modalHead {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.75rem;
+}
+.modalHead button:hover { color: var(--danger); }
+
+.form { display: flex; flex-direction: column; gap: 1.375rem; }
+
+.field { display: flex; flex-direction: column; gap: 0.5rem; }
+.field label { font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); }
+
+/* Toggle */
+.toggle {
+  display: flex; align-items: flex-start; gap: 1rem;
+  cursor: pointer; user-select: none;
+}
+.toggleTrack {
+  width: 44px; height: 24px; border-radius: 999px;
+  background: var(--border); position: relative;
+  transition: background 0.25s; flex-shrink: 0; margin-top: 2px; cursor: pointer;
+}
+.toggleTrack.on { background: var(--primary); }
+.toggleThumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; transition: transform 0.25s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.on .toggleThumb { transform: translateX(20px); }
+.toggleHint { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+.saveBtn {
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%);
+  color: #fff; padding: 0.9rem; border-radius: var(--r-lg);
+  font-weight: 700; font-size: 1rem; margin-top: 0.5rem;
+  box-shadow: 0 4px 14px var(--pink-glow);
+}
+.saveBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px var(--pink-glow); }
+.saveBtn:disabled { opacity: 0.6; cursor: not-allowed; }
