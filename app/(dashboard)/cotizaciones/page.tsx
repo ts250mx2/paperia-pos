@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { FileText, Search, FileDown, RefreshCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { FileText, Search, FileDown, RefreshCw, Pencil } from 'lucide-react';
 import styles from './cotizaciones.module.css';
 
 interface Cotizacion {
@@ -28,6 +29,7 @@ export default function CotizacionesPage() {
   const [list, setList]       = useState<Cotizacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch]   = useState('');
+  const router = useRouter();
 
   const load = async () => {
     setLoading(true);
@@ -93,7 +95,7 @@ export default function CotizacionesPage() {
                 <th className={styles.center}>Artículos</th>
                 <th className={styles.num}>Total</th>
                 <th className={styles.center}>Estatus</th>
-                <th className={styles.center}>PDF</th>
+                <th className={styles.center}>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -110,9 +112,14 @@ export default function CotizacionesPage() {
                       <span className={`${styles.badge} ${styles[est.cls]}`}>{est.label}</span>
                     </td>
                     <td className={styles.center}>
-                      <button className={styles.pdfBtn} onClick={() => openPdf(c.IdCotizacion)} title="Abrir PDF">
-                        <FileDown size={16} />
-                      </button>
+                      <div className={styles.actions}>
+                        <button className={styles.editBtn} onClick={() => router.push(`/cotizaciones/${c.IdCotizacion}/editar`)} title="Editar">
+                          <Pencil size={16} />
+                        </button>
+                        <button className={styles.pdfBtn} onClick={() => openPdf(c.IdCotizacion)} title="Abrir PDF">
+                          <FileDown size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

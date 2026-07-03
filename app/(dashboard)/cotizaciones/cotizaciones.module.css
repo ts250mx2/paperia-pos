@@ -74,14 +74,22 @@
 .convertida { background: rgba(54,192,236,0.18);  color: #1668a8; }
 .cancelada  { background: rgba(245,101,101,0.18); color: #c0392b; }
 
-.pdfBtn {
+.actions { display: inline-flex; gap: 8px; justify-content: center; }
+
+.pdfBtn, .editBtn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 36px; height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%);
   color: #fff;
+}
+.pdfBtn {
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%);
   box-shadow: 0 3px 10px var(--pink-glow);
 }
-.pdfBtn:hover { transform: translateY(-1px); }
+.editBtn {
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--cyan-deep) 100%);
+  box-shadow: 0 3px 10px rgba(54,192,236,0.30);
+}
+.pdfBtn:hover, .editBtn:hover { transform: translateY(-1px); }
 
 .empty { padding: 3rem 1rem; text-align: center; color: var(--text-muted); }
