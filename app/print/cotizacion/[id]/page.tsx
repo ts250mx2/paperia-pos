@@ -45,6 +45,8 @@ export default function CotizacionPrint() {
 
   const est = ESTATUS[cot.Estatus as number] || ESTATUS[0];
   const fecha = cot.Fecha ? new Date(cot.Fecha) : null;
+  const sumLineDesc = details.reduce((s, d) => s + (Number(d.Descuento) || 0), 0);
+  const descGlobal  = Math.max(0, Number(cot.Descuento || 0) - sumLineDesc);
 
   return (
     <div className={styles.page}>
@@ -85,19 +87,21 @@ export default function CotizacionPrint() {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th className="center" style={{ width: 70 }}>Cant.</th>
+              <th className={styles.center} style={{ width: 58 }}>Cant.</th>
               <th>Descripción</th>
-              <th className="num" style={{ width: 110 }}>P. Unitario</th>
-              <th className="num" style={{ width: 120 }}>Importe</th>
+              <th className={styles.num} style={{ width: 95 }}>P. Unitario</th>
+              <th className={styles.num} style={{ width: 85 }}>Desc.</th>
+              <th className={styles.num} style={{ width: 105 }}>Importe</th>
             </tr>
           </thead>
           <tbody>
             {details.map((d) => (
               <tr key={d.IdDetalle} className={d.EsExtra ? styles.extraRow : ''}>
-                <td className="center">{d.EsExtra ? '' : Number(d.Cantidad)}</td>
+                <td className={styles.center}>{d.EsExtra ? '' : Number(d.Cantidad)}</td>
                 <td>{d.EsExtra ? `+ ${d.Producto}` : d.Producto}</td>
-                <td className="num">{money(d.Precio)}</td>
-                <td className="num">{money(d.Importe)}</td>
+                <td className={styles.num}>{money(d.Precio)}</td>
+                <td className={styles.num}>{Number(d.Descuento) > 0 ? `–${money(d.Descuento)}` : '—'}</td>
+                <td className={styles.num}>{money(d.Importe)}</td>
               </tr>
             ))}
           </tbody>
@@ -107,8 +111,11 @@ export default function CotizacionPrint() {
         <div className={styles.totals}>
           <div className={styles.totalsBox}>
             <div className={styles.totalRow}><span>Subtotal</span><span>{money(cot.Subtotal)}</span></div>
-            {Number(cot.Descuento) > 0 && (
-              <div className={styles.totalRow}><span>Descuento</span><span>-{money(cot.Descuento)}</span></div>
+            {sumLineDesc > 0 && (
+              <div className={styles.totalRow}><span>Descuento productos</span><span>–{money(sumLineDesc)}</span></div>
+            )}
+            {descGlobal > 0 && (
+              <div className={styles.totalRow}><span>Descuento adicional</span><span>–{money(descGlobal)}</span></div>
             )}
             <div className={`${styles.totalRow} ${styles.grand}`}><span>Total</span><span>{money(cot.Total)}</span></div>
           </div>

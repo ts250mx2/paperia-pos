@@ -37,7 +37,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const connection = await pool.getConnection();
   try {
-    const { cart, cliente, notas } = await request.json();
+    const { cart, cliente, notas, descuentoGlobal } = await request.json();
 
     if (!Array.isArray(cart) || cart.length === 0) {
       return NextResponse.json({ message: 'El carrito está vacío.' }, { status: 400 });
@@ -48,44 +48,55 @@ export async function POST(request: Request) {
     const user = sessionCookie ? JSON.parse(sessionCookie.value) : null;
     const idUsuario = user?.IdUsuario ?? null;
 
-    // Total calculado en el servidor (no se confía en el cliente)
-    let total = 0;
+    // Totales y descuentos calculados en el servidor (no se confía en el cliente)
+    let subtotal = 0;             // suma de importes brutos (antes de descuento)
+    let descProductos = 0;        // suma de descuentos por línea
     for (const item of cart) {
       const extras = Array.isArray(item.extras) ? item.extras : [];
       const extrasUnit = extras.reduce((s: number, e: any) => s + (Number(e.Precio1) || 0), 0);
-      total += (Number(item.price) + extrasUnit) * Number(item.quantity);
+      const gross = (Number(item.price) + extrasUnit) * Number(item.quantity);
+      subtotal += gross;
+      descProductos += Math.max(0, Math.min(Number(item.discount) || 0, gross));
     }
+    const descGlobal = Math.min(Number(descuentoGlobal) || 0, Math.max(0, subtotal - descProductos));
+    const descuento  = descProductos + descGlobal;
+    const total      = Math.max(0, subtotal - descuento);
 
     await connection.beginTransaction();
 
     // 1. Insertar encabezado
     const [headerRes]: any = await connection.query(
       `INSERT INTO tblCotizaciones (Folio, Fecha, Cliente, IdUsuario, Subtotal, Descuento, Total, Notas, Estatus)
-       VALUES (NULL, NOW(), ?, ?, ?, 0, ?, ?, 0)`,
-      [cliente || '', idUsuario, total, total, notas || '']
+       VALUES (NULL, NOW(), ?, ?, ?, ?, ?, ?, 0)`,
+      [cliente || '', idUsuario, subtotal, descuento, total, notas || '']
     );
     const idCotizacion = headerRes.insertId;
     const folio = 'COT-' + String(idCotizacion).padStart(6, '0');
     await connection.query('UPDATE tblCotizaciones SET Folio = ? WHERE IdCotizacion = ?', [folio, idCotizacion]);
 
-    // 2. Insertar renglones (producto principal + sus extras)
+    // 2. Insertar renglones (producto principal + sus extras).
+    //    El descuento por línea se guarda en el renglón principal; Importe = bruto.
     for (const item of cart) {
       const cantidad = Number(item.quantity) || 0;
       const precio   = Number(item.price) || 0;
+      const extras   = Array.isArray(item.extras) ? item.extras : [];
+      const extrasUnit = extras.reduce((s: number, e: any) => s + (Number(e.Precio1) || 0), 0);
+      const grossLine = (precio + extrasUnit) * cantidad;
+      const descLinea = Math.max(0, Math.min(Number(item.discount) || 0, grossLine));
+
       await connection.query(
         `INSERT INTO tblDetalleCotizaciones
-           (IdCotizacion, IdProducto, Producto, Cantidad, Precio, Importe, TipoPrecio, EsExtra)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
-        [idCotizacion, item.productId, item.name, cantidad, precio, precio * cantidad, item.typePrice || 1]
+           (IdCotizacion, IdProducto, Producto, Cantidad, Precio, Importe, Descuento, TipoPrecio, EsExtra)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+        [idCotizacion, item.productId, item.name, cantidad, precio, precio * cantidad, descLinea, item.typePrice || 1]
       );
 
-      const extras = Array.isArray(item.extras) ? item.extras : [];
       for (const extra of extras) {
         const ep = Number(extra.Precio1) || 0;
         await connection.query(
           `INSERT INTO tblDetalleCotizaciones
-             (IdCotizacion, IdProducto, Producto, Cantidad, Precio, Importe, TipoPrecio, EsExtra)
-           VALUES (?, ?, ?, ?, ?, ?, 1, 1)`,
+             (IdCotizacion, IdProducto, Producto, Cantidad, Precio, Importe, Descuento, TipoPrecio, EsExtra)
+           VALUES (?, ?, ?, ?, ?, ?, 0, 1, 1)`,
           [idCotizacion, extra.IdProducto, extra.Producto, cantidad, ep, ep * cantidad]
         );
       }

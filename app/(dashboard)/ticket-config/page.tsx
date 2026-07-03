@@ -8,7 +8,7 @@ export default function TicketConfigPage() {
   const [config, setConfig] = useState({
     Header1: '', Header2: '', Header3: '', Header4: '', Header5: '',
     Footer1: '', Footer2: '', Footer3: '',
-    PrintKitchenDefault: 0, RequireCustomerName: 0
+    RequireCustomerName: 0
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -117,16 +117,6 @@ export default function TicketConfigPage() {
           </div>
           <div className={styles.inputs}>
             <div className={styles.inputGroup} style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
-              <input 
-                type="checkbox" 
-                id="PrintKitchenDefault"
-                checked={!!config.PrintKitchenDefault} 
-                onChange={(e) => setConfig({...config, PrintKitchenDefault: e.target.checked ? 1 : 0})}
-                style={{ width: '20px', height: '20px' }}
-              />
-              <label htmlFor="PrintKitchenDefault" style={{ margin: 0 }}>Imprimir en cocina por defecto</label>
-            </div>
-            <div className={styles.inputGroup} style={{ flexDirection: 'row', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
               <input 
                 type="checkbox" 
                 id="RequireCustomerName"

@@ -37,6 +37,7 @@ interface CartItem {
   image?: string | null;
   isExtra: number;
   sizeLabel?: string;
+  discount: number;   // descuento en $ para toda la línea
 }
 
 interface PaymentState {
@@ -65,8 +66,7 @@ export default function POSPage() {
   const [cashError, setCashError]       = useState('');
   const [openSession, setOpenSession]   = useState<{ IdApertura: number } | null>(null);
   const [cliente, setCliente]           = useState('');
-  const [printKitchen, setPrintKitchen] = useState(false);
-  const [printKitchenManual, setPrintKitchenManual] = useState<boolean | null>(null);
+  const [globalDiscount, setGlobalDiscount] = useState('');
   const [ticketConfig, setTicketConfig] = useState<any>(null);
   const [cotizacionModal, setCotizacionModal] = useState(false);
   const [cotCliente, setCotCliente]     = useState('');
@@ -118,11 +118,18 @@ export default function POSPage() {
     } catch { return null; }
   };
 
-  /* ── Payment math ── */
-  const total      = cart.reduce((acc, item) => {
+  /* ── Cart / discount math ── */
+  const lineGross = (item: CartItem) => {
     const extrasTotal = item.extras.reduce((s, e) => s + (e.Precio1 || 0), 0);
-    return acc + (item.price + extrasTotal) * item.quantity;
-  }, 0);
+    return (item.price + extrasTotal) * item.quantity;
+  };
+  const lineNet = (item: CartItem) => Math.max(0, lineGross(item) - (item.discount || 0));
+
+  const subtotal           = cart.reduce((acc, item) => acc + lineGross(item), 0);
+  const descuentoProductos = cart.reduce((acc, item) => acc + Math.min(item.discount || 0, lineGross(item)), 0);
+  const descuentoGlobal    = Math.min(parseFloat(globalDiscount) || 0, Math.max(0, subtotal - descuentoProductos));
+  const descuentoTotal     = descuentoProductos + descuentoGlobal;
+  const total              = Math.max(0, subtotal - descuentoTotal);
 
   const pEfectivo      = parseFloat(payment.efectivo)      || 0;
   const pTarjeta       = parseFloat(payment.tarjeta)       || 0;
@@ -148,7 +155,6 @@ export default function POSPage() {
     if (!session) { alert('No hay caja abierta. Ve a Caja y abre el turno primero.'); return; }
     setPayment({ efectivo: total.toFixed(2), tarjeta: '', transferencia: '' });
     setCliente('');
-    setPrintKitchen(printKitchenManual !== null ? printKitchenManual : !!ticketConfig?.PrintKitchenDefault);
     setCashError('');
     setPaymentModal(true);
   };
@@ -170,7 +176,7 @@ export default function POSPage() {
         cartId, productId: product.IdProducto,
         name: product.Producto, price, quantity: 1,
         typePrice, extras: [], image: product.ArchivoImagen || null,
-        isExtra: 0,
+        isExtra: 0, discount: 0,
         sizeLabel: typePrice === 1 ? 'Chico' : (typePrice === 2 && product.Precio3 > 0) ? 'Mediano' : (typePrice > 1) ? 'Grande' : '',
       };
       setCarts(prev => {
@@ -208,10 +214,23 @@ export default function POSPage() {
     });
   };
 
+  const updateDiscount = (cartId: string, value: string) => {
+    const raw = parseFloat(value) || 0;
+    setCarts(prev => {
+      const next = [...prev];
+      next[activeCartIdx] = next[activeCartIdx].map(i => {
+        if (i.cartId !== cartId) return i;
+        const gross = (i.price + i.extras.reduce((s, e) => s + (e.Precio1 || 0), 0)) * i.quantity;
+        return { ...i, discount: Math.max(0, Math.min(raw, gross)) };
+      });
+      return next;
+    });
+  };
+
   const addExtra    = (item: CartItem, extra: Product) =>
     setCarts(prev => {
       const next = [...prev];
-      next[activeCartIdx] = next[activeCartIdx].map(i => 
+      next[activeCartIdx] = next[activeCartIdx].map(i =>
         i.cartId === item.cartId ? { ...i, extras: [...i.extras, extra] } : i
       );
       return next;
@@ -240,15 +259,8 @@ export default function POSPage() {
     setProcessing(true);
     setCashError('');
 
-    const shouldPrintKitchen = printKitchen;
-
-    // Pre-open windows to avoid popup blockers after async fetch
-    // Use names to help some browsers distinguish them
+    // Pre-open the ticket window to avoid popup blockers after the async fetch
     const ticketWin = window.open('about:blank', 'TicketPrint', 'width=420,height=650');
-    let kitchenWin: Window | null = null;
-    if (shouldPrintKitchen) {
-      kitchenWin = window.open('about:blank', 'KitchenPrint', 'width=420,height=650');
-    }
 
     try {
       const res  = await fetch('/api/sales', {
@@ -275,18 +287,13 @@ export default function POSPage() {
         if (ticketWin) {
           ticketWin.location.href = `/print/ticket/${data.idVenta}`;
         }
-        if (shouldPrintKitchen && kitchenWin) {
-          kitchenWin.location.href = `/print/kitchen/${data.idVenta}`;
-        }
       } else {
         if (ticketWin) ticketWin.close();
-        if (kitchenWin) kitchenWin.close();
         setCashError(data.message || 'Error al procesar la venta');
       }
-    } catch { 
+    } catch {
       if (ticketWin) ticketWin.close();
-      if (kitchenWin) kitchenWin.close();
-      setCashError('Error de conexión'); 
+      setCashError('Error de conexión');
     }
     finally   { setProcessing(false); }
   };
@@ -312,11 +319,12 @@ export default function POSPage() {
       const res = await fetch('/api/cotizaciones', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cart, cliente: cotCliente, notas: cotNotas }),
+        body: JSON.stringify({ cart, cliente: cotCliente, notas: cotNotas, descuentoGlobal }),
       });
       const data = await res.json();
       if (res.ok) {
         setCotizacionModal(false);
+        setGlobalDiscount('');
         setCarts(prev => {
           const next = [...prev];
           next[activeCartIdx] = [];
@@ -414,11 +422,11 @@ export default function POSPage() {
               </div>
             )}
           </div>
-          <button onClick={() => setCarts(prev => {
+          <button onClick={() => { setGlobalDiscount(''); setCarts(prev => {
             const next = [...prev];
             next[activeCartIdx] = [];
             return next;
-          })}><Trash2 size={19} color="var(--text-muted)" /></button>
+          }); }}><Trash2 size={19} color="var(--text-muted)" /></button>
         </div>
 
         <div className={cartStyles.items}>
@@ -444,12 +452,27 @@ export default function POSPage() {
               </div>
               <div className={cartStyles.itemControls}>
                 <p className={cartStyles.itemPrice}>
-                  ${((item.price + item.extras.reduce((s, e) => s + e.Precio1, 0)) * item.quantity).toFixed(2)}
+                  {item.discount > 0 && (
+                    <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)', fontWeight: 400, fontSize: '0.78em', marginRight: 6 }}>
+                      ${lineGross(item).toFixed(2)}
+                    </span>
+                  )}
+                  ${lineNet(item).toFixed(2)}
                 </p>
                 <div className={cartStyles.quantity}>
                   <button className={cartStyles.qtyBtn} onClick={() => updateQuantity(item.cartId, item.quantity - 1)}><Minus size={15} /></button>
                   <span>{item.quantity}</span>
                   <button className={cartStyles.qtyBtn} onClick={() => updateQuantity(item.cartId, item.quantity + 1)}><Plus size={15} /></button>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>Desc $</span>
+                  <input
+                    type="number" min="0" step="0.01"
+                    value={item.discount ? String(item.discount) : ''}
+                    placeholder="0"
+                    onChange={e => updateDiscount(item.cartId, e.target.value)}
+                    style={{ width: 66, padding: '4px 6px', fontSize: '0.8rem', textAlign: 'right' }}
+                  />
                 </div>
               </div>
             </div>
@@ -458,7 +481,26 @@ export default function POSPage() {
 
         <div className={cartStyles.footer}>
           <div className={cartStyles.summaryRow}>
-            <span>Subtotal</span><span>${total.toFixed(2)}</span>
+            <span>Subtotal</span><span>${subtotal.toFixed(2)}</span>
+          </div>
+          {descuentoProductos > 0 && (
+            <div className={cartStyles.summaryRow}>
+              <span>Descuento productos</span><span>–${descuentoProductos.toFixed(2)}</span>
+            </div>
+          )}
+          <div className={cartStyles.summaryRow} style={{ alignItems: 'center' }}>
+            <span>Descuento total (extra)</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              $
+              <input
+                type="number" min="0" step="0.01"
+                value={globalDiscount}
+                placeholder="0.00"
+                onChange={e => setGlobalDiscount(e.target.value)}
+                disabled={cart.length === 0}
+                style={{ width: 90, padding: '5px 8px', fontSize: '0.85rem', textAlign: 'right' }}
+              />
+            </span>
           </div>
           <div className={`${cartStyles.summaryRow} ${cartStyles.totalRow}`}>
             <span>Total</span><span>${total.toFixed(2)}</span>
@@ -614,23 +656,6 @@ export default function POSPage() {
                     onChange={e => setCliente(e.target.value)}
                     autoComplete="off"
                   />
-                </div>
-
-                {/* Print Options */}
-                <div className={styles.payField} style={{ marginTop: '1.25rem', flexDirection: 'row', alignItems: 'center', gap: '12px' }}>
-                  <input
-                    type="checkbox"
-                    id="printKitchen"
-                    checked={printKitchen}
-                    onChange={e => {
-                      setPrintKitchen(e.target.checked);
-                      setPrintKitchenManual(e.target.checked);
-                    }}
-                    style={{ width: '24px', height: '24px', cursor: 'pointer' }}
-                  />
-                  <label htmlFor="printKitchen" style={{ cursor: 'pointer', margin: 0, fontSize: '0.95rem', fontWeight: '600' }}>
-                    Imprimir Ticket de Cocina
-                  </label>
                 </div>
 
                 {/* Summary (Inside right col) */}

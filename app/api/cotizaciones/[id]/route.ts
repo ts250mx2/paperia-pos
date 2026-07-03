@@ -22,7 +22,7 @@ export async function GET(
     }
 
     const [details] = await pool.query(`
-      SELECT IdDetalle, IdProducto, Producto, Cantidad, Precio, Importe, TipoPrecio, EsExtra
+      SELECT IdDetalle, IdProducto, Producto, Cantidad, Precio, Importe, Descuento, TipoPrecio, EsExtra
       FROM tblDetalleCotizaciones
       WHERE IdCotizacion = ?
       ORDER BY IdDetalle ASC
