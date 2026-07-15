@@ -20,7 +20,6 @@ interface Product {
 interface Category {
   IdCategoria: number;
   Categoria: string;
-  EsExtra: number;
 }
 
 const BLANK_FORM = {
@@ -257,7 +256,7 @@ export default function ProductsPage() {
                   <option value={0}>— Selecciona —</option>
                   {categories.map(cat => (
                     <option key={cat.IdCategoria} value={cat.IdCategoria}>
-                      {cat.Categoria}{cat.EsExtra === 1 ? ' (Extras)' : ''}
+                      {cat.Categoria}
                     </option>
                   ))}
                 </select>

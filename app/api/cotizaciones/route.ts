@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     const [rows] = await pool.query(`
       SELECT c.IdCotizacion, c.Folio, c.Fecha, c.Cliente, c.Total, c.Estatus,
              u.Usuario AS UsuarioNombre,
-             (SELECT COUNT(*) FROM tblDetalleCotizaciones d WHERE d.IdCotizacion = c.IdCotizacion AND d.EsExtra = 0) AS Articulos
+             (SELECT COUNT(*) FROM tblDetalleCotizaciones d WHERE d.IdCotizacion = c.IdCotizacion) AS Articulos
       FROM tblCotizaciones c
       LEFT JOIN tblUsuarios u ON c.IdUsuario = u.IdUsuario
       ${where}
@@ -52,9 +52,7 @@ export async function POST(request: Request) {
     let subtotal = 0;             // suma de importes brutos (antes de descuento)
     let descProductos = 0;        // suma de descuentos por línea
     for (const item of cart) {
-      const extras = Array.isArray(item.extras) ? item.extras : [];
-      const extrasUnit = extras.reduce((s: number, e: any) => s + (Number(e.Precio1) || 0), 0);
-      const gross = (Number(item.price) + extrasUnit) * Number(item.quantity);
+      const gross = Number(item.price) * Number(item.quantity);
       subtotal += gross;
       descProductos += Math.max(0, Math.min(Number(item.discount) || 0, gross));
     }
@@ -74,32 +72,19 @@ export async function POST(request: Request) {
     const folio = 'COT-' + String(idCotizacion).padStart(6, '0');
     await connection.query('UPDATE tblCotizaciones SET Folio = ? WHERE IdCotizacion = ?', [folio, idCotizacion]);
 
-    // 2. Insertar renglones (producto principal + sus extras).
-    //    El descuento por línea se guarda en el renglón principal; Importe = bruto.
+    // 2. Insertar renglones. El descuento por línea se guarda por renglón; Importe = bruto.
     for (const item of cart) {
       const cantidad = Number(item.quantity) || 0;
       const precio   = Number(item.price) || 0;
-      const extras   = Array.isArray(item.extras) ? item.extras : [];
-      const extrasUnit = extras.reduce((s: number, e: any) => s + (Number(e.Precio1) || 0), 0);
-      const grossLine = (precio + extrasUnit) * cantidad;
+      const grossLine = precio * cantidad;
       const descLinea = Math.max(0, Math.min(Number(item.discount) || 0, grossLine));
 
       await connection.query(
         `INSERT INTO tblDetalleCotizaciones
            (IdCotizacion, IdProducto, Producto, Cantidad, Precio, Importe, Descuento, TipoPrecio, EsExtra)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-        [idCotizacion, item.productId, item.name, cantidad, precio, precio * cantidad, descLinea, item.typePrice || 1]
+        [idCotizacion, item.productId, item.name, cantidad, precio, grossLine, descLinea, item.typePrice || 1]
       );
-
-      for (const extra of extras) {
-        const ep = Number(extra.Precio1) || 0;
-        await connection.query(
-          `INSERT INTO tblDetalleCotizaciones
-             (IdCotizacion, IdProducto, Producto, Cantidad, Precio, Importe, Descuento, TipoPrecio, EsExtra)
-           VALUES (?, ?, ?, ?, ?, ?, 0, 1, 1)`,
-          [idCotizacion, extra.IdProducto, extra.Producto, cantidad, ep, ep * cantidad]
-        );
-      }
     }
 
     await connection.commit();

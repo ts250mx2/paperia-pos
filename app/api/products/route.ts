@@ -6,7 +6,7 @@ export async function GET() {
     const [products] = await pool.query(`
       SELECT p.IdProducto, p.Producto, p.Precio1, p.Precio2, p.Precio3,
              p.IVA, p.Status, p.Multiple, p.IdCategoria, p.ArchivoImagen,
-             c.Categoria, c.EsExtra
+             c.Categoria
       FROM tblProductos p
       LEFT JOIN tblCategorias c ON p.IdCategoria = c.IdCategoria
       WHERE p.Status != 2

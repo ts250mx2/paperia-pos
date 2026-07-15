@@ -7,11 +7,11 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const { Categoria, EsExtra } = await request.json();
+    const { Categoria } = await request.json();
 
     await pool.query(
-      'UPDATE tblCategorias SET Categoria = ?, EsExtra = ? WHERE IdCategoria = ?',
-      [Categoria, EsExtra ? 1 : 0, id]
+      'UPDATE tblCategorias SET Categoria = ? WHERE IdCategoria = ?',
+      [Categoria, id]
     );
 
     return NextResponse.json({ success: true });

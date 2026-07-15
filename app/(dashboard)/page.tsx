@@ -16,14 +16,12 @@ interface Product {
   Multiple: number;
   IdCategoria: number;
   Categoria?: string;
-  EsExtra?: number;
   ArchivoImagen?: string | null;
 }
 
 interface Category {
   IdCategoria: number;
   Categoria: string;
-  EsExtra: number;
 }
 
 interface CartItem {
@@ -33,9 +31,7 @@ interface CartItem {
   price: number;
   quantity: number;
   typePrice: number;
-  extras: Product[];
   image?: string | null;
-  isExtra: number;
   sizeLabel?: string;
   discount: number;   // descuento en $ para toda la línea
 }
@@ -48,7 +44,6 @@ interface PaymentState {
 
 export default function POSPage() {
   const [products, setProducts]               = useState<Product[]>([]);
-  const [allExtras, setAllExtras]             = useState<Product[]>([]);
   const [categories, setCategories]           = useState<Category[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -59,7 +54,6 @@ export default function POSPage() {
   const [loading, setLoading]                 = useState(true);
 
   const [priceModal, setPriceModal]     = useState<{ product: Product } | null>(null);
-  const [extrasModal, setExtrasModal]   = useState<{ item: CartItem } | null>(null);
   const [paymentModal, setPaymentModal] = useState(false);
   const [payment, setPayment]           = useState<PaymentState>({ efectivo: '', tarjeta: '', transferencia: '' });
   const [processing, setProcessing]     = useState(false);
@@ -88,7 +82,6 @@ export default function POSPage() {
     let result = products;
     if (selectedCategory) result = result.filter(p => p.IdCategoria === selectedCategory);
     if (searchTerm)       result = result.filter(p => p.Producto.toLowerCase().includes(searchTerm.toLowerCase()));
-    result = [...result].sort((a, b) => (a.EsExtra ?? 0) - (b.EsExtra ?? 0));
     setFilteredProducts(result);
   }, [selectedCategory, searchTerm, products]);
 
@@ -101,7 +94,6 @@ export default function POSPage() {
       const data = await res.json();
       const configData = await configRes.json();
       setProducts(data.products);
-      setAllExtras(data.products.filter((p: Product) => p.EsExtra === 1));
       setCategories(data.categories);
       setTicketConfig(configData);
       setLoading(false);
@@ -119,10 +111,7 @@ export default function POSPage() {
   };
 
   /* ── Cart / discount math ── */
-  const lineGross = (item: CartItem) => {
-    const extrasTotal = item.extras.reduce((s, e) => s + (e.Precio1 || 0), 0);
-    return (item.price + extrasTotal) * item.quantity;
-  };
+  const lineGross = (item: CartItem) => item.price * item.quantity;
   const lineNet = (item: CartItem) => Math.max(0, lineGross(item) - (item.discount || 0));
 
   const subtotal           = cart.reduce((acc, item) => acc + lineGross(item), 0);
@@ -175,9 +164,9 @@ export default function POSPage() {
       const newItem: CartItem = {
         cartId, productId: product.IdProducto,
         name: product.Producto, price, quantity: 1,
-        typePrice, extras: [], image: product.ArchivoImagen || null,
-        isExtra: 0, discount: 0,
-        sizeLabel: typePrice === 1 ? 'Chico' : (typePrice === 2 && product.Precio3 > 0) ? 'Mediano' : (typePrice > 1) ? 'Grande' : '',
+        typePrice, image: product.ArchivoImagen || null,
+        discount: 0,
+        sizeLabel: (product.Precio2 > 0 || product.Precio3 > 0) ? `Precio ${typePrice}` : '',
       };
       setCarts(prev => {
         const next = [...prev];
@@ -214,38 +203,30 @@ export default function POSPage() {
     });
   };
 
+  // Fija la cantidad directamente (input editable en el pedido). Mínimo 1;
+  // para quitar el producto se usa el botón menos o el bote de basura.
+  const setQuantityDirect = (cartId: string, value: string) => {
+    const n = parseInt(value, 10);
+    if (isNaN(n) || n < 1) return;
+    setCarts(prev => {
+      const next = [...prev];
+      next[activeCartIdx] = next[activeCartIdx].map(i => i.cartId === cartId ? { ...i, quantity: n } : i);
+      return next;
+    });
+  };
+
   const updateDiscount = (cartId: string, value: string) => {
     const raw = parseFloat(value) || 0;
     setCarts(prev => {
       const next = [...prev];
       next[activeCartIdx] = next[activeCartIdx].map(i => {
         if (i.cartId !== cartId) return i;
-        const gross = (i.price + i.extras.reduce((s, e) => s + (e.Precio1 || 0), 0)) * i.quantity;
+        const gross = i.price * i.quantity;
         return { ...i, discount: Math.max(0, Math.min(raw, gross)) };
       });
       return next;
     });
   };
-
-  const addExtra    = (item: CartItem, extra: Product) =>
-    setCarts(prev => {
-      const next = [...prev];
-      next[activeCartIdx] = next[activeCartIdx].map(i =>
-        i.cartId === item.cartId ? { ...i, extras: [...i.extras, extra] } : i
-      );
-      return next;
-    });
-
-  const removeExtra = (item: CartItem, idx: number) =>
-    setCarts(prev => {
-      const next = [...prev];
-      next[activeCartIdx] = next[activeCartIdx].map(i => {
-        if (i.cartId !== item.cartId) return i;
-        const ex = [...i.extras]; ex.splice(idx, 1);
-        return { ...i, extras: ex };
-      });
-      return next;
-    });
 
   /* ── Process sale ── */
   const processSale = async () => {
@@ -440,15 +421,6 @@ export default function POSPage() {
                 <p className={cartStyles.itemMeta}>
                   ${item.price.toFixed(2)}{item.sizeLabel ? ` · ${item.sizeLabel}` : ''}
                 </p>
-                {item.extras.map((ex, idx) => (
-                  <div key={idx} className={styles.extraTag}>
-                    +{ex.Producto} (${ex.Precio1.toFixed(2)})
-                    <button onClick={() => removeExtra(item, idx)}><X size={11} /></button>
-                  </div>
-                ))}
-                <button className={styles.addExtraBtn} onClick={() => setExtrasModal({ item })}>
-                  + Agregar Extra
-                </button>
               </div>
               <div className={cartStyles.itemControls}>
                 <p className={cartStyles.itemPrice}>
@@ -461,7 +433,13 @@ export default function POSPage() {
                 </p>
                 <div className={cartStyles.quantity}>
                   <button className={cartStyles.qtyBtn} onClick={() => updateQuantity(item.cartId, item.quantity - 1)}><Minus size={15} /></button>
-                  <span>{item.quantity}</span>
+                  <input
+                    type="number" min="1" step="1"
+                    value={item.quantity}
+                    onChange={e => setQuantityDirect(item.cartId, e.target.value)}
+                    style={{ width: 46, padding: '2px 4px', fontSize: '0.9rem', textAlign: 'center', fontWeight: 700 }}
+                    aria-label="Cantidad"
+                  />
                   <button className={cartStyles.qtyBtn} onClick={() => updateQuantity(item.cartId, item.quantity + 1)}><Plus size={15} /></button>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
@@ -532,58 +510,30 @@ export default function POSPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={priceModal.product.ArchivoImagen} alt={priceModal.product.Producto} className={styles.modalProductImg} />
             )}
-            <h3>Seleccionar Tamaño</h3>
+            <h3>Seleccionar Precio</h3>
             <p className={styles.modalSubtitle}>{priceModal.product.Producto}</p>
             <div className={styles.priceOptions}>
-              {/* Button 1: Always Chico */}
+              {/* Precio 1 */}
               <button onClick={() => addToCart(priceModal.product, priceModal.product.Precio1, 1)}>
-                <span>Chico</span><strong>${priceModal.product.Precio1.toFixed(2)}</strong>
+                <span>Precio 1</span><strong>${priceModal.product.Precio1.toFixed(2)}</strong>
               </button>
 
-              {/* Button 2: Mediano (if 3 prices) or Grande (if 2 prices) */}
+              {/* Precio 2 */}
               {priceModal.product.Precio2 > 0 && (
                 <button onClick={() => addToCart(priceModal.product, priceModal.product.Precio2, 2)}>
-                  <span>{priceModal.product.Precio3 > 0 ? 'Mediano' : 'Grande'}</span>
+                  <span>Precio 2</span>
                   <strong>${priceModal.product.Precio2.toFixed(2)}</strong>
                 </button>
               )}
 
-              {/* Button 3: Always Grande (if exists) */}
+              {/* Precio 3 */}
               {priceModal.product.Precio3 > 0 && (
                 <button onClick={() => addToCart(priceModal.product, priceModal.product.Precio3, 3)}>
-                  <span>Grande</span><strong>${priceModal.product.Precio3.toFixed(2)}</strong>
+                  <span>Precio 3</span><strong>${priceModal.product.Precio3.toFixed(2)}</strong>
                 </button>
               )}
             </div>
             <button className={styles.closeBtn} onClick={() => setPriceModal(null)}>Cancelar</button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Extras modal ── */}
-      {extrasModal && (
-        <div className={styles.modalOverlay}>
-          <div className={`${styles.modal} glass animate-scale`} style={{ maxWidth: '560px' }}>
-            <h3>Agregar Extras</h3>
-            <p className={styles.modalSubtitle}>Para: {extrasModal.item.name}</p>
-            <div className={styles.extrasGrid}>
-              {allExtras.length === 0 ? (
-                <p style={{ color: 'var(--text-muted)', gridColumn: '1/-1', textAlign: 'center' }}>
-                  No hay extras disponibles
-                </p>
-              ) : allExtras.map(extra => (
-                <button key={extra.IdProducto} className={styles.extraBtn}
-                  onClick={() => addExtra(extrasModal.item, extra)}>
-                  {extra.ArchivoImagen
-                    // eslint-disable-next-line @next/next/no-img-element
-                    ? <img src={extra.ArchivoImagen} alt={extra.Producto} className={styles.extraImg} />
-                    : <div className={styles.extraInitial}>{extra.Producto.charAt(0)}</div>}
-                  <span>{extra.Producto}</span>
-                  <strong>+${extra.Precio1.toFixed(2)}</strong>
-                </button>
-              ))}
-            </div>
-            <button className={styles.confirmBtn} onClick={() => setExtrasModal(null)}>Listo</button>
           </div>
         </div>
       )}

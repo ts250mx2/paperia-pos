@@ -23,14 +23,14 @@ tblVentas (v): IdVenta, IdApertura, Folio, Total(double), FechaVenta(datetime), 
      directamente tblVentas (v.Total); NO multipliques uniendo con detalle sin la clave completa.
 
 tblDetalleVentas (d): IdDetalleVenta, IdVenta, IdProducto, Cantidad(double), Precio(double),
-  Descuento(double), IVA(double), Fecha(datetime), IdApertura, EsExtra.
+  Descuento(double), IVA(double), Fecha(datetime), IdApertura.
   -> Renglones de cada ticket. Importe del renglón = d.Cantidad * d.Precio. Une con tblVentas por IdVenta.
 
 tblProductos (p): IdProducto, Producto(varchar), Precio1, Precio2, Precio3, IVA, Status(int), IdCategoria,
   CodigoBarras(varchar), Codigo(varchar), Costo(double), CantidadVentas(int).
   -> Status: 2 = eliminado/oculto. Para productos activos filtra p.Status <> 2.
 
-tblCategorias (c): IdCategoria, Categoria(varchar), EsExtra(int).
+tblCategorias (c): IdCategoria, Categoria(varchar).
 
 tblUsuarios (u): IdUsuario, Usuario(varchar), IdPuesto(int: 1=Administrador,2=Cajero,3=Mesero), Login, Status.
 

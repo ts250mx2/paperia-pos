@@ -13,14 +13,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const { Categoria, EsExtra } = await request.json();
+    const { Categoria } = await request.json();
 
     const [maxRows] = await pool.query('SELECT MAX(IdCategoria) as maxId FROM tblCategorias');
     const nextId = ((maxRows as any[])[0].maxId || 0) + 1;
 
     await pool.query(
-      'INSERT INTO tblCategorias (IdCategoria, Categoria, EsExtra) VALUES (?, ?, ?)',
-      [nextId, Categoria, EsExtra ? 1 : 0]
+      'INSERT INTO tblCategorias (IdCategoria, Categoria) VALUES (?, ?)',
+      [nextId, Categoria]
     );
 
     return NextResponse.json({ success: true, id: nextId });

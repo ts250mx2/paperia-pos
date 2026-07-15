@@ -7,7 +7,6 @@ import styles from './categories.module.css';
 interface Category {
   IdCategoria: number;
   Categoria: string;
-  EsExtra: number;
 }
 
 export default function CategoriesPage() {
@@ -16,7 +15,7 @@ export default function CategoriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing]       = useState<Category | null>(null);
   const [saving, setSaving]         = useState(false);
-  const [form, setForm]             = useState({ Categoria: '', EsExtra: false });
+  const [form, setForm]             = useState({ Categoria: '' });
 
   useEffect(() => { fetchData(); }, []);
 
@@ -30,10 +29,10 @@ export default function CategoriesPage() {
   const openModal = (cat: Category | null = null) => {
     if (cat) {
       setEditing(cat);
-      setForm({ Categoria: cat.Categoria, EsExtra: cat.EsExtra === 1 });
+      setForm({ Categoria: cat.Categoria });
     } else {
       setEditing(null);
-      setForm({ Categoria: '', EsExtra: false });
+      setForm({ Categoria: '' });
     }
     setIsModalOpen(true);
   };
@@ -70,7 +69,7 @@ export default function CategoriesPage() {
           <Tag size={30} color="var(--primary)" />
           <div>
             <h1>Categorías</h1>
-            <p className={styles.subtitle}>Organiza tus productos y define cuáles llevan extras</p>
+            <p className={styles.subtitle}>Organiza tus productos por categoría</p>
           </div>
         </div>
         <button className={styles.addBtn} onClick={() => openModal()}>
@@ -91,9 +90,6 @@ export default function CategoriesPage() {
               </div>
               <div className={styles.cardBody}>
                 <h3 className={styles.catName}>{cat.Categoria}</h3>
-                <span className={cat.EsExtra === 1 ? styles.extraYes : styles.extraNo}>
-                  {cat.EsExtra === 1 ? '✦ Categoría de Extras' : 'Categoría Principal'}
-                </span>
               </div>
               <div className={styles.cardActions}>
                 <button className={styles.editBtn}   onClick={() => openModal(cat)}><Edit2  size={15} /></button>
@@ -125,21 +121,6 @@ export default function CategoriesPage() {
                   autoFocus
                 />
               </div>
-
-              <label className={styles.toggle}>
-                <div
-                  className={`${styles.toggleTrack} ${form.EsExtra ? styles.on : ''}`}
-                  onClick={() => setForm({ ...form, EsExtra: !form.EsExtra })}
-                >
-                  <div className={styles.toggleThumb} />
-                </div>
-                <div>
-                  <span>Categoría de Extras / Aditamentos</span>
-                  <p className={styles.toggleHint}>
-                    Actívalo si esta categoría contiene extras que se agregan a un producto principal
-                  </p>
-                </div>
-              </label>
 
               <button type="submit" className={styles.saveBtn} disabled={saving}>
                 <Check size={18} />

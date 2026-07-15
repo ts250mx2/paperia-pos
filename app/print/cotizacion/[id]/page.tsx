@@ -96,9 +96,9 @@ export default function CotizacionPrint() {
           </thead>
           <tbody>
             {details.map((d) => (
-              <tr key={d.IdDetalle} className={d.EsExtra ? styles.extraRow : ''}>
-                <td className={styles.center}>{d.EsExtra ? '' : Number(d.Cantidad)}</td>
-                <td>{d.EsExtra ? `+ ${d.Producto}` : d.Producto}</td>
+              <tr key={d.IdDetalle}>
+                <td className={styles.center}>{Number(d.Cantidad)}</td>
+                <td>{d.Producto}</td>
                 <td className={styles.num}>{money(d.Precio)}</td>
                 <td className={styles.num}>{Number(d.Descuento) > 0 ? `–${money(d.Descuento)}` : '—'}</td>
                 <td className={styles.num}>{money(d.Importe)}</td>
