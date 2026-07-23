@@ -63,14 +63,13 @@
   gap: 0.25rem;
 }
 
+/* Descripción completa: sin recorte. Los nombres largos de papelería
+   se muestran íntegros y parten en varias líneas. */
 .name {
   font-size: 0.8rem;
   color: var(--text);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .price {
@@ -79,17 +78,3 @@
   color: var(--primary, #ff8da1);
 }
 
-/* Badge */
-.badge {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: var(--yellow, #fdd835);
-  color: #333;
-  font-size: 0.6rem;
-  font-weight: 800;
-  padding: 0.175rem 0.45rem;
-  border-radius: 999px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}

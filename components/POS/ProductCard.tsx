@@ -40,13 +40,11 @@ export default function ProductCard({ product, onSelect, disabled }: Props) {
       </div>
 
       <div className={styles.info}>
-        <h3 className={styles.name}>{product.Producto}</h3>
+        <h3 className={styles.name} title={product.Producto}>{product.Producto}</h3>
         <p className={styles.price}>
           {hasMultiplePrices ? 'Desde ' : ''}${product.Precio1.toFixed(2)}
         </p>
       </div>
-
-      {product.Multiple === 1 && <span className={styles.badge}>Extras</span>}
     </button>
   );
 }

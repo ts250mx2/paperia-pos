@@ -36,31 +36,6 @@
   flex-direction: column;
   gap: 0.5rem;
   position: relative;
-  background-image: url('/logo.png');
-  background-repeat: no-repeat;
-  background-position: center bottom 10%;
-  background-size: 70%;
-  background-attachment: local;
-}
-
-/* Use a pseudo-element for the watermark to control opacity without affecting children */
-.items::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: inherit;
-  background-repeat: inherit;
-  background-position: inherit;
-  background-size: inherit;
-  opacity: 0.08;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* Ensure items stay above watermark */
-.items > * {
-  position: relative;
-  z-index: 1;
 }
 
 /* ── Cart item ── */

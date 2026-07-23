@@ -42,6 +42,30 @@ interface PaymentState {
   transferencia: string;
 }
 
+/* ── Persistencia de las cuentas (sobrevive al navegar y al recargar) ── */
+const CART_STORAGE_KEY = 'paperia_pos_carts_v1';
+
+// Normaliza lo leído de localStorage para tolerar datos viejos o corruptos.
+function normalizeStoredCarts(raw: unknown): CartItem[][] | null {
+  if (!Array.isArray(raw) || raw.length !== 3) return null;
+  return raw.map(list =>
+    (Array.isArray(list) ? list : [])
+      .filter((i): i is Record<string, unknown> => !!i && typeof i === 'object')
+      .map(i => ({
+        cartId:    String(i.cartId ?? `${i.productId}-${i.typePrice ?? 1}`),
+        productId: Number(i.productId) || 0,
+        name:      String(i.name ?? ''),
+        price:     Number(i.price) || 0,
+        quantity:  Math.max(1, Number(i.quantity) || 1),
+        typePrice: Number(i.typePrice) || 1,
+        image:     null as string | null,
+        sizeLabel: typeof i.sizeLabel === 'string' ? i.sizeLabel : '',
+        discount:  Math.max(0, Number(i.discount) || 0),
+      }))
+      .filter(i => i.productId > 0 && i.name !== '')
+  );
+}
+
 export default function POSPage() {
   const [products, setProducts]               = useState<Product[]>([]);
   const [categories, setCategories]           = useState<Category[]>([]);
@@ -67,9 +91,47 @@ export default function POSPage() {
   const [cotNotas, setCotNotas]         = useState('');
   const [savingCot, setSavingCot]       = useState(false);
   const [cotError, setCotError]         = useState('');
+  const [cartsHydrated, setCartsHydrated] = useState(false);
   const router = useRouter();
 
   useEffect(() => { fetchData(); checkSession(); }, []);
+
+  // Restaura las cuentas guardadas al montar (al navegar a otra página y volver).
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(CART_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const restored = normalizeStoredCarts(parsed?.carts);
+        if (restored) setCarts(restored);
+        if (typeof parsed?.activeCartIdx === 'number' && parsed.activeCartIdx >= 0 && parsed.activeCartIdx <= 2) {
+          setActiveCartIdx(parsed.activeCartIdx);
+        }
+        if (typeof parsed?.globalDiscount === 'string') setGlobalDiscount(parsed.globalDiscount);
+      }
+    } catch { /* almacenamiento no disponible o corrupto: se arranca vacío */ }
+    setCartsHydrated(true);
+  }, []);
+
+  // Guarda en cada cambio. No escribe antes de restaurar, para no pisar lo guardado.
+  // Las imágenes no se persisten (pueden ser base64 grandes y agotar la cuota).
+  useEffect(() => {
+    if (!cartsHydrated) return;
+    try {
+      const slim = carts.map(list => list.map(({ image, ...rest }) => rest));
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ carts: slim, activeCartIdx, globalDiscount }));
+    } catch { /* cuota excedida: la persistencia se degrada sin romper la venta */ }
+  }, [cartsHydrated, carts, activeCartIdx, globalDiscount]);
+
+  // Re-vincula las imágenes de producto a las cuentas restauradas.
+  useEffect(() => {
+    if (!cartsHydrated || products.length === 0) return;
+    setCarts(prev => prev.map(list => list.map(item => {
+      if (item.image) return item;
+      const p = products.find(pr => pr.IdProducto === item.productId);
+      return p?.ArchivoImagen ? { ...item, image: p.ArchivoImagen } : item;
+    })));
+  }, [cartsHydrated, products]);
 
   // Re-check session when window regains focus
   useEffect(() => {
@@ -248,17 +310,19 @@ export default function POSPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cart, total,
+          cart,
           idApertura: openSession.IdApertura,
           efectivo:      pEfectivo,
           tarjeta:       pTarjeta,
           transferencia: pTransferencia,
           cliente,
+          descuentoGlobal,
         }),
       });
       const data = await res.json();
       if (res.ok) {
         setPaymentModal(false);
+        setGlobalDiscount('');
         setCarts(prev => {
           const next = [...prev];
           next[activeCartIdx] = [];
@@ -467,7 +531,7 @@ export default function POSPage() {
             </div>
           )}
           <div className={cartStyles.summaryRow} style={{ alignItems: 'center' }}>
-            <span>Descuento total (extra)</span>
+            <span>Descuento adicional</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               $
               <input
@@ -485,9 +549,8 @@ export default function POSPage() {
           </div>
           <button
             className={cartStyles.checkoutBtn}
-            disabled
-            title="Temporalmente deshabilitado"
-            style={{ opacity: 0.45, cursor: 'not-allowed' }}
+            disabled={cart.length === 0}
+            onClick={openPaymentModal}
           >
             Pagar Ahora
           </button>

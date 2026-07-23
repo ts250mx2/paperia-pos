@@ -178,15 +178,14 @@ export default function ProductsPage() {
               <th>Precio 1</th>
               <th>Precio 2</th>
               <th>Precio 3</th>
-              <th>Extras</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={8} className={styles.emptyCell}>Cargando...</td></tr>
+              <tr><td colSpan={7} className={styles.emptyCell}>Cargando...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={8} className={styles.emptyCell}>No hay productos</td></tr>
+              <tr><td colSpan={7} className={styles.emptyCell}>No hay productos</td></tr>
             ) : filtered.map(p => (
               <tr key={p.IdProducto}>
                 <td><Thumb src={p.ArchivoImagen} /></td>
@@ -195,11 +194,6 @@ export default function ProductsPage() {
                 <td className={styles.price}>${p.Precio1.toFixed(2)}</td>
                 <td className={styles.price}>{p.Precio2 > 0 ? `$${p.Precio2.toFixed(2)}` : '—'}</td>
                 <td className={styles.price}>{p.Precio3 > 0 ? `$${p.Precio3.toFixed(2)}` : '—'}</td>
-                <td>
-                  <span className={p.Multiple === 1 ? styles.yes : styles.no}>
-                    {p.Multiple === 1 ? 'Sí' : 'No'}
-                  </span>
-                </td>
                 <td>
                   <div className={styles.actions}>
                     <button className={styles.editBtn}   onClick={() => handleOpenModal(p)}><Edit2  size={15} /></button>
@@ -273,14 +267,6 @@ export default function ProductsPage() {
                   </div>
                 ))}
               </div>
-
-              <label className={styles.toggle}>
-                <div className={`${styles.toggleTrack} ${formData.Multiple === 1 ? styles.on : ''}`}
-                  onClick={() => setFormData({ ...formData, Multiple: formData.Multiple === 1 ? 0 : 1 })}>
-                  <div className={styles.toggleThumb} />
-                </div>
-                <span>Permite Aditamentos / Extras</span>
-              </label>
 
               <button type="submit" className={styles.saveBtn} disabled={saving}>
                 <Check size={18} />

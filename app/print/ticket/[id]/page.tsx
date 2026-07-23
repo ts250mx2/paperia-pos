@@ -80,29 +80,20 @@ export default function TicketPrint() {
           <span>TOTAL</span>
         </div>
         <div className={styles.divider}></div>
-        {details.filter((i: any) => !i.IdDetallePadre).map((item: any, idx: number) => {
-          const itemExtras = details.filter((ex: any) => ex.IdDetallePadre === item.IdDetalleVenta);
-          const itemTotal = (item.Cantidad * item.Precio) + itemExtras.reduce((acc: number, ex: any) => acc + (ex.Cantidad * ex.Precio), 0);
-          
+        {details.map((item: any, idx: number) => {
+          const itemTotal = item.Cantidad * item.Precio;
+
           return (
             <div key={idx} className={styles.item}>
               <div className={styles.row}>
                 <span>{item.Cantidad} {item.Producto}</span>
                 <span>${itemTotal.toFixed(2)}</span>
               </div>
-              {item.TipoPrecio > 0 && (
+              {item.TipoPrecio > 1 && (
                 <div style={{ fontSize: '11px', color: '#000', marginLeft: '5px', fontWeight: 'bold' }}>
-                  * TAMAÑO: {
-                    (item.TipoPrecio === 1 ? 'CHICO' : 
-                    (item.TipoPrecio === 2 && item.Precio3 > 0) ? 'MEDIANO' : 'GRANDE')
-                  }
+                  * PRECIO {item.TipoPrecio}
                 </div>
               )}
-              {itemExtras.map((extra: any, eIdx: number) => (
-                <div key={eIdx} style={{ fontSize: '11px', marginLeft: '10px', fontStyle: 'italic' }}>
-                  + {extra.Producto} (${(extra.Cantidad * extra.Precio).toFixed(2)})
-                </div>
-              ))}
             </div>
           );
         })}
