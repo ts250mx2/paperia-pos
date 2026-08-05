@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { cookies } from 'next/headers';
+import { recordInventoryMovements } from '@/lib/inventory';
 
 /**
  * Registra una venta.
@@ -88,6 +90,22 @@ export async function POST(request: Request) {
       }
       throw insertError;
     }
+
+    /* ── 7. Descuento de inventario (best-effort, no bloquea la venta) ── */
+    const cookieStore   = await cookies();
+    const sessionCookie = cookieStore.get('auth_session');
+    const user = sessionCookie ? JSON.parse(sessionCookie.value) : null;
+
+    await recordInventoryMovements(
+      cart.map((item: any) => ({
+        idProducto: item.productId,
+        cantidad: -(Number(item.quantity) || 0),
+        tipo: 'venta' as const,
+        motivo: `Venta folio ${folioStr}`,
+        referencia: folioStr,
+      })),
+      user?.IdUsuario || null
+    );
 
     return NextResponse.json({ success: true, idVenta, folio: folioStr, total });
   } catch (error) {

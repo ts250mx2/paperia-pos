@@ -1,0 +1,298 @@
+/* Estilos de layout compartidos entre los dashboards (Gastos, Inventario). */
+
+/* ─── Container ─────────────────────────────────────────────────────────── */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-bottom: 3rem;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.titleGroup h1 {
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.subtitle {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-top: 0.2rem;
+}
+
+/* ─── Filter row (presets + date pickers) ─────────────────────────────────── */
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dateDivider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  margin: 0 0.25rem;
+  flex-shrink: 0;
+}
+
+.periodBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  transition: var(--ease);
+  cursor: pointer;
+}
+
+.periodBtn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.periodActive {
+  background: linear-gradient(135deg, var(--pink) 0%, var(--pink-deep) 100%) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 4px 14px var(--pink-glow);
+}
+
+.dateInput {
+  padding: 0.45rem 0.7rem;
+  border-radius: var(--r-lg);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  width: auto;
+  min-width: 130px;
+  transition: var(--ease);
+  cursor: pointer;
+}
+
+.dateInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--pink-glow);
+  outline: none;
+}
+
+.dateSep {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ─── Error ──────────────────────────────────────────────────────────────── */
+.errorMsg {
+  background: rgba(245,101,101,0.1);
+  border: 1px solid rgba(245,101,101,0.3);
+  color: var(--danger);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--r-lg);
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+/* ─── KPI Grid ───────────────────────────────────────────────────────────── */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .kpiGrid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .kpiGrid { grid-template-columns: 1fr; }
+}
+
+.kpiCard {
+  padding: 1.5rem;
+  border-radius: var(--r-xl);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  transition: var(--ease);
+}
+
+.kpiCard:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.kpiMain {
+  border: 1.5px solid var(--pink-glow);
+}
+
+.kpiWarn {
+  border: 1.5px solid rgba(245,101,101,0.35);
+}
+
+.kpiIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpiInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kpiLabel {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.kpiValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.kpiSub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+/* ─── Chart Cards ────────────────────────────────────────────────────────── */
+.chartCard {
+  border-radius: var(--r-xl);
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.chartHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.chartTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.chartSub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.chartBody {
+  overflow-x: auto;
+}
+
+/* ─── Group Buttons ──────────────────────────────────────────────────────── */
+.groupBtns {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.groupBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--ease);
+}
+
+.groupBtn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.groupActive {
+  background: var(--pink) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+  box-shadow: 0 3px 10px var(--pink-glow);
+}
+
+/* ─── Mini table (ej. alertas de bajo stock) ────────────────────────────── */
+.miniTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.miniTable th {
+  padding: 0.6rem 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+.miniTable td {
+  padding: 0.65rem 0.75rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.badgeDanger {
+  background: rgba(245,101,101,0.12);
+  color: var(--danger);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badgeWarn {
+  background: rgba(245,166,35,0.14);
+  color: var(--yellow-deep);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}

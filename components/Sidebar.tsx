@@ -7,6 +7,7 @@ import {
   Users, LogOut, ChevronRight, TrendingUp,
   Sun, Moon, Tags, Settings, UserCircle,
   ChevronsLeft, ChevronsRight, BarChart2, Sparkles, FileText,
+  Wallet, TrendingDown, Boxes,
 } from 'lucide-react';
 import { useTheme }   from './ThemeProvider';
 import { useSidebar } from './SidebarContext';
@@ -24,6 +25,10 @@ export default function Sidebar() {
     { name: 'Dashboard',     icon: BarChart2,       path: '/dashboard',   adminOnly: true },
     { name: 'Caja / Cortes', icon: TrendingUp,      path: '/cash',        adminOnly: true },
     { name: 'Movimientos',   icon: DollarSign,      path: '/movements',   adminOnly: true },
+    { name: 'Gastos',        icon: Wallet,          path: '/expenses',    adminOnly: true },
+    { name: 'Dash. Gastos',  icon: TrendingDown,    path: '/expenses/dashboard',  adminOnly: true },
+    { name: 'Inventario',    icon: Boxes,           path: '/inventory',   adminOnly: true },
+    { name: 'Dash. Inventario', icon: BarChart2,    path: '/inventory/dashboard', adminOnly: true },
     { name: 'Productos',     icon: Package,         path: '/products',    adminOnly: true },
     { name: 'Categorías',    icon: Tags,            path: '/categories',  adminOnly: true },
     { name: 'Usuarios',      icon: UserCircle,      path: '/users',       adminOnly: true },

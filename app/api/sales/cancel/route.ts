@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { cookies } from 'next/headers';
+import { recordInventoryMovements } from '@/lib/inventory';
 
 export async function POST(request: Request) {
   let connection;
@@ -64,6 +65,25 @@ export async function POST(request: Request) {
 
       await connection.commit();
       console.log('[CANCEL] Success for Folio:', venta.Folio);
+
+      // Step D: devolver el stock al inventario (best-effort, fuera de la
+      // transacción: la cancelación ya está confirmada y no debe revertirse
+      // si el módulo de inventario falla).
+      const [detalleRows] = await connection.query(
+        'SELECT IdProducto, Cantidad FROM tblDetalleVentas WHERE IdVenta = ? AND IdApertura = ?',
+        [idVentaNum, venta.IdApertura]
+      );
+      await recordInventoryMovements(
+        (detalleRows as any[]).map(d => ({
+          idProducto: d.IdProducto,
+          cantidad: Number(d.Cantidad) || 0,
+          tipo: 'devolucion' as const,
+          motivo: `Cancelación folio ${venta.Folio}`,
+          referencia: String(venta.Folio),
+        })),
+        user.IdUsuario
+      );
+
       return NextResponse.json({ success: true });
 
     } catch (txError: any) {
