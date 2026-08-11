@@ -149,8 +149,9 @@ export default function POSPage() {
 
   const fetchData = async () => {
     try {
+      // sort=ventas: los más vendidos primero (el servidor ya excluye Status = 2).
       const [res, configRes]  = await Promise.all([
-        fetch('/api/products'),
+        fetch('/api/products?sort=ventas'),
         fetch('/api/config/ticket')
       ]);
       const data = await res.json();

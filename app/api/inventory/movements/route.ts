@@ -55,9 +55,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'La cantidad debe ser mayor a cero' }, { status: 400 });
     }
 
-    const [productRows] = await pool.query('SELECT IdProducto FROM tblProductos WHERE IdProducto = ?', [IdProducto]);
+    // Status 2 = eliminado: no se listan en ningún catálogo, así que tampoco
+    // deben poder acumular movimientos nuevos de inventario.
+    const [productRows] = await pool.query(
+      'SELECT IdProducto FROM tblProductos WHERE IdProducto = ? AND Status != 2',
+      [IdProducto]
+    );
     if ((productRows as any[]).length === 0) {
-      return NextResponse.json({ message: 'El producto no existe' }, { status: 404 });
+      return NextResponse.json({ message: 'El producto no existe o fue eliminado' }, { status: 404 });
     }
 
     // El signo del delta lo decide el tipo de movimiento (salida siempre resta;
