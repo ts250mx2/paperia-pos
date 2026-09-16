@@ -1,5 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { anthropic, resolveModel } from '@/lib/anthropic';
+import {
+  clienteAnthropic,
+  credencialParaRuta,
+  esCambioDeProveedor,
+  refrescarCredencial,
+  type CredencialIA,
+} from '@/lib/agente-ia';
 import { assertReadOnly } from '@/lib/sql-sandbox';
 import pool from '@/lib/db';
 
@@ -9,6 +15,7 @@ export const maxDuration = 60;
 
 const MAX_TOOL_ITERATIONS = 8;   // evita loops infinitos / costos descontrolados
 const MAX_HISTORY_TURNS = 12;    // pares user/assistant que conservamos como contexto
+const MAX_TOKENS = 8000;
 
 // ── Esquema de la base de datos (BDPaperia) que el agente puede consultar ──────
 const DB_SCHEMA = `
@@ -122,13 +129,6 @@ async function runQuery(sql: string): Promise<{ ok: boolean; text: string }> {
 }
 
 export async function POST(req: Request) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return Response.json(
-      { error: 'Falta configurar ANTHROPIC_API_KEY en el archivo .env del servidor.' },
-      { status: 500 },
-    );
-  }
-
   let body: any;
   try {
     body = await req.json();
@@ -141,7 +141,12 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Falta el mensaje (prompt)' }, { status: 400 });
   }
 
-  const { config } = resolveModel(body?.model);
+  // HL Console determina el proveedor y el modelo del agente configurado en HL_AGENTE.
+  const credencialInicial = await credencialParaRuta();
+  if (!credencialInicial.ok) {
+    return Response.json({ error: credencialInicial.error }, { status: 503 });
+  }
+
   const rawHistory: IncomingTurn[] = Array.isArray(body?.history) ? body.history : [];
 
   // Construye los mensajes: historial reciente + el turno actual del usuario
@@ -164,33 +169,44 @@ export async function POST(req: Request) {
         }
       };
 
+      let credencial: CredencialIA = credencialInicial.credencial;
+      let emitido = false;
+
+      const ejecutarRonda = async (cred: CredencialIA): Promise<Anthropic.Message> => {
+        const mstream = clienteAnthropic(cred).messages.stream({
+          model: cred.modelo,
+          max_tokens: MAX_TOKENS,
+          system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+          tools: TOOLS,
+          messages,
+        });
+
+        for await (const event of mstream) {
+          if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+            emitido = true;
+            send({ type: 'text', text: event.delta.text });
+          }
+        }
+        return mstream.finalMessage();
+      };
+
+      const ronda = async (): Promise<Anthropic.Message> => {
+        try {
+          return await ejecutarRonda(credencial);
+        } catch (error) {
+          if (emitido || !esCambioDeProveedor(error)) throw error;
+          credencial = await refrescarCredencial();
+          console.warn(`[hl] Lapicito ahora corre con ${credencial.proveedor} / ${credencial.modelo}`);
+          send({ type: 'model', modelo: credencial.modelo });
+          return ejecutarRonda(credencial);
+        }
+      };
+
       try {
+        send({ type: 'model', modelo: credencial.modelo });
+
         for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
-          const params: Anthropic.MessageCreateParamsStreaming = {
-            model: config.id,
-            max_tokens: 8000,
-            system,
-            tools: TOOLS,
-            messages,
-            stream: true,
-          };
-          if (config.thinking) {
-            (params as any).thinking = { type: 'adaptive' };
-          }
-          if (config.effort) {
-            (params as any).output_config = { effort: 'medium' };
-          }
-
-          const mstream = anthropic.messages.stream(params);
-
-          for await (const event of mstream) {
-            if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-              send({ type: 'text', text: event.delta.text });
-            }
-          }
-
-          const msg = await mstream.finalMessage();
-          // Preserva el contenido completo (incluye bloques de thinking firmados)
+          const msg = await ronda();
           messages.push({ role: 'assistant', content: msg.content });
 
           if (msg.stop_reason !== 'tool_use') {
@@ -231,7 +247,7 @@ export async function POST(req: Request) {
         console.error('[agent] error:', e);
         const message =
           e instanceof Anthropic.AuthenticationError
-            ? 'La llave de Anthropic (ANTHROPIC_API_KEY) es inválida o falta.'
+            ? 'HL Console rechazó la llamada. Revisa HL_KEY y la llave configurada para Lapicito.'
             : e instanceof Anthropic.RateLimitError
             ? 'Demasiadas solicitudes. Intenta de nuevo en unos segundos.'
             : e?.message || 'Ocurrió un error inesperado.';

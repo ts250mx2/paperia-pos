@@ -2,14 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Send, X, Database, Trash2, Maximize2, Minimize2 } from 'lucide-react';
-import { useLapicitoChat, type ModelKey } from './LapicitoChatContext';
+import { useLapicitoChat } from './LapicitoChatContext';
 import styles from './LapicitoAssistant.module.css';
-
-const MODEL_OPTIONS: { key: ModelKey; label: string }[] = [
-  { key: 'haiku',  label: 'Haiku · rápido' },
-  { key: 'sonnet', label: 'Sonnet · equilibrio' },
-  { key: 'opus',   label: 'Opus · potente' },
-];
 
 const SUGGESTIONS = [
   '¿Cuánto vendí hoy?',
@@ -57,7 +51,7 @@ interface LapicitoChatPanelProps {
 }
 
 export default function LapicitoChatPanel({ variant, onClose, onMaximize, onMinimize }: LapicitoChatPanelProps) {
-  const { model, changeModel, messages, busy, send, clear } = useLapicitoChat();
+  const { modelo, messages, busy, send, clear } = useLapicitoChat();
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -78,20 +72,12 @@ export default function LapicitoChatPanel({ variant, onClose, onMaximize, onMini
           <LapicitoFace size={variant === 'page' ? 40 : 34} />
           <div className={styles.brandText}>
             <span className={styles.name}>Lapicito</span>
-            <span className={styles.sub}>{variant === 'page' ? 'Agente inteligente' : 'tu asistente'}</span>
+            <span className={styles.sub} title={modelo ? `Modelo configurado en HL Console: ${modelo}` : undefined}>
+              {modelo ?? (variant === 'page' ? 'Agente inteligente' : 'tu asistente')}
+            </span>
           </div>
         </div>
         <div className={styles.headerActions}>
-          <select
-            className={styles.modelSelect}
-            value={model}
-            onChange={(e) => changeModel(e.target.value as ModelKey)}
-            title="Modelo de IA"
-          >
-            {MODEL_OPTIONS.map((o) => (
-              <option key={o.key} value={o.key}>{o.label}</option>
-            ))}
-          </select>
           {messages.length > 0 && (
             <button className={styles.iconBtn} onClick={clear} title="Limpiar conversación">
               <Trash2 size={17} />

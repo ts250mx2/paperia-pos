@@ -1,8 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-
-export type ModelKey = 'haiku' | 'sonnet' | 'opus';
+import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -12,8 +10,7 @@ export interface ChatMessage {
 }
 
 interface LapicitoChatCtx {
-  model: ModelKey;
-  changeModel: (m: ModelKey) => void;
+  modelo: string | null;
   messages: ChatMessage[];
   busy: boolean;
   send: (text: string) => Promise<void>;
@@ -25,20 +22,10 @@ const LapicitoChatContext = createContext<LapicitoChatCtx | null>(null);
 // Comparte la conversación entre el widget flotante y la página de pantalla
 // completa "/agente-inteligente", para que "maximizar" no pierda el hilo.
 export function LapicitoChatProvider({ children }: { children: ReactNode }) {
-  const [model, setModel] = useState<ModelKey>('opus');
+  const [modelo, setModelo] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    const m = localStorage.getItem('lapicito_model');
-    if (m === 'haiku' || m === 'sonnet' || m === 'opus') setModel(m);
-  }, []);
-
-  const changeModel = (m: ModelKey) => {
-    setModel(m);
-    localStorage.setItem('lapicito_model', m);
-  };
 
   const clear = () => setMessages([]);
 
@@ -79,7 +66,7 @@ export function LapicitoChatProvider({ children }: { children: ReactNode }) {
       const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, model, history }),
+        body: JSON.stringify({ prompt, history }),
         signal: controller.signal,
       });
 
@@ -106,6 +93,7 @@ export function LapicitoChatProvider({ children }: { children: ReactNode }) {
           let evt: any;
           try { evt = JSON.parse(trimmed); } catch { continue; }
           if (evt.type === 'text') appendText(evt.text);
+          else if (evt.type === 'model') setModelo(evt.modelo ?? null);
           else if (evt.type === 'tool') patchLast({ querying: true });
           else if (evt.type === 'error') patchLast({ content: `⚠️ ${evt.message}`, streaming: false, querying: false });
           else if (evt.type === 'done') patchLast({ streaming: false, querying: false });
@@ -125,7 +113,7 @@ export function LapicitoChatProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <LapicitoChatContext.Provider value={{ model, changeModel, messages, busy, send, clear }}>
+    <LapicitoChatContext.Provider value={{ modelo, messages, busy, send, clear }}>
       {children}
     </LapicitoChatContext.Provider>
   );
