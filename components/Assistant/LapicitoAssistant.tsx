@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Sparkles } from 'lucide-react';
 import LapicitoChatPanel, { LapicitoFace } from './LapicitoChatPanel';
 import styles from './LapicitoAssistant.module.css';
 
@@ -35,8 +34,7 @@ export default function LapicitoAssistant() {
           title="Pregúntale a Lapicito"
           aria-label="Abrir asistente Lapicito"
         >
-          <LapicitoFace size={46} />
-          <span className={styles.fabSpark}><Sparkles size={14} /></span>
+          <LapicitoFace size={82} />
         </button>
       )}
 

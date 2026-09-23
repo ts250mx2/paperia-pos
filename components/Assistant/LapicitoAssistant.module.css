@@ -1,36 +1,21 @@
-/* ── Botón flotante (lápiz rosa) ── */
+/* ── Botón flotante (mascota 3D sin contenedor visible) ── */
 .fab {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
+  width: 92px;
+  height: 104px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border);
+  background: transparent;
+  filter: drop-shadow(0 12px 14px rgba(69, 31, 62, 0.22));
+  border: 0;
   z-index: 500;
   animation: bob 3s ease-in-out infinite;
 }
 .fab:hover { transform: scale(1.08) rotate(-4deg); }
-
-.fabSpark {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: var(--cyan);
-  color: #053;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow);
-}
+.fab img { width: 82px; height: 82px; }
 
 @keyframes bob {
   0%, 100% { transform: translateY(0); }
@@ -59,7 +44,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 0.9rem;
+  padding: 0.65rem 0.9rem;
   border-bottom: 1px solid var(--border);
   background: linear-gradient(120deg, var(--pink-glow), transparent);
 }

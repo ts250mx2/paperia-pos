@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { Send, X, Database, Trash2, Maximize2, Minimize2 } from 'lucide-react';
 import { useLapicitoChat } from './LapicitoChatContext';
 import styles from './LapicitoAssistant.module.css';
@@ -15,16 +16,13 @@ const SUGGESTIONS = [
 /* ── Avatar circular de Lapicito (lápiz rosa) ── */
 export function LapicitoFace({ size = 40 }: { size?: number }) {
   return (
-    <img
-      src="/lapicito.jpg"
+    <Image
+      src="/lapicito-3d-transparent.png"
       alt="Lapicito"
       width={size}
       height={size}
       style={{
-        borderRadius: '50%',
         objectFit: 'contain',
-        backgroundColor: '#fff',
-        border: '1px solid var(--border)',
         display: 'block',
       }}
     />
@@ -69,7 +67,7 @@ export default function LapicitoChatPanel({ variant, onClose, onMaximize, onMini
     <>
       <header className={styles.header}>
         <div className={styles.brand}>
-          <LapicitoFace size={variant === 'page' ? 40 : 34} />
+          <LapicitoFace size={variant === 'page' ? 72 : 42} />
           <div className={styles.brandText}>
             <span className={styles.name}>Lapicito</span>
             <span className={styles.sub} title={modelo ? `Modelo configurado en HL Console: ${modelo}` : undefined}>
@@ -104,7 +102,7 @@ export default function LapicitoChatPanel({ variant, onClose, onMaximize, onMini
       <div className={styles.messages} ref={scrollRef}>
         {messages.length === 0 && (
           <div className={styles.welcome}>
-            <LapicitoFace size={64} />
+            <LapicitoFace size={variant === 'page' ? 180 : 88} />
             <p className={styles.welcomeTitle}>¡Hola! Soy Lapicito ✏️</p>
             <p className={styles.welcomeText}>
               Pregúntame sobre tus ventas, productos, categorías o cajas. Consulto tus datos en tiempo real.
@@ -121,7 +119,7 @@ export default function LapicitoChatPanel({ variant, onClose, onMaximize, onMini
           <div key={i} className={`${styles.msg} ${m.role === 'user' ? styles.user : styles.assistant}`}>
             {m.role === 'assistant' && (
               <div className={styles.avatar}>
-                <LapicitoFace size={26} />
+                <LapicitoFace size={variant === 'page' ? 42 : 32} />
               </div>
             )}
             <div className={`${styles.bubble} ${variant === 'page' ? styles.bubbleWide : ''}`}>
